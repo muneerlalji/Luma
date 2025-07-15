@@ -1,0 +1,12 @@
+.page-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #eff6ff 0%, #f3e8ff 50%, #fff 100%);
+  font-family: sans-serif;
+}
+.page-content {
+  flex: 1 1 0%;
+  display: flex;
+  flex-direction: column;
+} 

@@ -1,0 +1,33 @@
+.luma-btn {
+  width: 100%;
+  max-width: 16rem;
+  margin: 0 auto;
+  padding: 0.75rem 0;
+  border-radius: 500px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 2px 8px 0 rgba(16,30,54,0.10);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+  outline: 4px solid transparent;
+  outline-offset: 2px;
+  letter-spacing: 0.01em;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: block;
+}
+.luma-btn:focus {
+  outline: 4px solid #60a5fa;
+}
+.luma-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+  box-shadow: 0 4px 16px 0 rgba(16,30,54,0.13);
+  transform: scale(1.04);
+}
+.luma-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+} 

@@ -1,0 +1,22 @@
+.luma-textbox {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.75rem;
+  outline: none;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: box-shadow 0.2s, border 0.2s;
+  background: #fff;
+  color: #1e293b;
+  margin-bottom: 0.3rem;
+}
+.luma-textbox:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 2px #a78bfa33;
+}
+.luma-textbox::placeholder {
+  color: #6b7280;
+  opacity: 0.8;
+  font-weight: 500;
+} 
