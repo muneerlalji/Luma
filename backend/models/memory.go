@@ -12,6 +12,6 @@ type Memory struct {
 	User      User      `gorm:"foreignKey:UserID"`
 	Title     string    `gorm:"not null"`
 	Type      string    `gorm:"not null"`
-	Content   string    `gorm:"type:jsonb;not null"`
+	Content   string    `gorm:"type:text;not null"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 }

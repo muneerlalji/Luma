@@ -45,6 +45,9 @@ func main() {
 	{
 		protected.GET("/me", handlers.GetCurrentUser)
 		protected.POST("/upload-photo", handlers.UploadPhoto)
+		protected.POST("/memories", handlers.CreateMemory)
+		protected.GET("/memories", handlers.GetMemories)
+		protected.GET("/photos/:id", handlers.GetPhoto)
 	}
 
 	port := os.Getenv("PORT")

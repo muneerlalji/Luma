@@ -2,11 +2,15 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: none;
+  background: #fff;
   position: relative;
 }
 
-.page-root::before {
+.landing-page {
+  background: none;
+}
+
+.landing-page::before {
   content: '';
   position: fixed;
   top: 0;
@@ -18,7 +22,7 @@
   filter: blur(4px) brightness(0.7);
 }
 
-.page-root::after {
+.landing-page::after {
   content: '';
   position: fixed;
   top: 0;

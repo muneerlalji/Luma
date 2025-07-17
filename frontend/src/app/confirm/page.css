@@ -10,7 +10,7 @@
 .confirm-container {
   width: 100%;
   max-width: 28rem;
-  background: rgba(255,255,255,0.9);
+  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #8b5cf6 100%);
   border-radius: 1.5rem;
   box-shadow: 0 10px 25px 0 rgba(16,30,54,0.10);
   padding: 2rem;
@@ -22,14 +22,14 @@
 .confirm-title {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #1e3a8a;
+  color: #fff;
   margin-bottom: 0.5rem;
 }
 .confirm-error {
-  color: #ef4444;
+  color: #fecaca;
   text-align: center;
 }
 .confirm-message {
-  color: #16a34a;
+  color: #bbf7d0;
   text-align: center;
 } 

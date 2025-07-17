@@ -10,7 +10,7 @@
 .login-container {
   width: 100%;
   max-width: 28rem;
-  background: rgba(255,255,255,0.9);
+  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #8b5cf6 100%);
   border-radius: 1.5rem;
   box-shadow: 0 10px 25px 0 rgba(16,30,54,0.10);
   padding: 2rem;
@@ -22,7 +22,7 @@
 .login-title {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #1e3a8a;
+  color: #fff;
   margin-bottom: 0.5rem;
 }
 .login-form {
@@ -48,7 +48,7 @@
   font-weight: 500;
 }
 .login-error {
-  color: #ef4444;
+  color: #fecaca;
   text-align: center;
 }
 .login-btn {
@@ -75,16 +75,16 @@
   margin-top: 0.5rem;
 }
 .login-forgot-link {
-  color: #2563eb;
+  color: #e0e7ff;
   font-size: 0.875rem;
   text-decoration: underline;
 }
 .login-register-link {
   font-size: 0.95rem;
-  color: #3730a3;
+  color: #e0e7ff;
   text-align: center;
 }
 .login-register-anchor {
-  color: #7c3aed;
+  color: #c7d2fe;
   text-decoration: underline;
 } 

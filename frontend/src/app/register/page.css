@@ -10,7 +10,7 @@
 .register-container {
   width: 100%;
   max-width: 28rem;
-  background: rgba(255,255,255,0.9);
+  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #8b5cf6 100%);
   border-radius: 1.5rem;
   box-shadow: 0 10px 25px 0 rgba(16,30,54,0.10);
   padding: 2rem;
@@ -22,7 +22,7 @@
 .register-title {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #5b21b6;
+  color: #fff;
   margin-bottom: 0.5rem;
 }
 .register-form {
@@ -48,11 +48,11 @@
   font-weight: 500;
 }
 .register-error {
-  color: #ef4444;
+  color: #fecaca;
   text-align: center;
 }
 .register-success {
-  color: #16a34a;
+  color: #bbf7d0;
   text-align: center;
 }
 .register-btn {
@@ -80,10 +80,10 @@
 }
 .register-login-link {
   font-size: 0.95rem;
-  color: #3730a3;
+  color: #e0e7ff;
   text-align: center;
 }
 .register-login-anchor {
-  color: #2563eb;
+  color: #c7d2fe;
   text-decoration: underline;
 } 

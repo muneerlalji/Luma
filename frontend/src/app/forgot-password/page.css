@@ -10,7 +10,7 @@
 .forgot-container {
   width: 100%;
   max-width: 28rem;
-  background: rgba(255,255,255,0.9);
+  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #8b5cf6 100%);
   border-radius: 1.5rem;
   box-shadow: 0 10px 25px 0 rgba(16,30,54,0.10);
   padding: 2rem;
@@ -22,7 +22,7 @@
 .forgot-title {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #1e3a8a;
+  color: #fff;
   margin-bottom: 0.5rem;
 }
 .forgot-form {
@@ -43,11 +43,11 @@
   box-shadow: 0 0 0 2px #60a5fa;
 }
 .forgot-error {
-  color: #ef4444;
+  color: #fecaca;
   text-align: center;
 }
 .forgot-message {
-  color: #16a34a;
+  color: #bbf7d0;
   text-align: center;
 }
 .forgot-btn {
@@ -74,7 +74,7 @@
   margin-top: 0.5rem;
 }
 .forgot-back-link {
-  color: #2563eb;
+  color: #e0e7ff;
   font-size: 0.875rem;
   text-decoration: underline;
 } 
