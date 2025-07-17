@@ -1,7 +1,7 @@
 import React from 'react';
 import './TextBox.css';
 
-type TextBoxProps = React.InputHTMLAttributes<HTMLInputElement> & {
+interface TextBoxProps extends React.InputHTMLAttributes<HTMLInputElement> {
   className?: string;
 };
 

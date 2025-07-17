@@ -6,6 +6,7 @@ export default function Page({ children }: { children: React.ReactNode }) {
   return (
     <div className="page-root">
       <Header />
+      <div className="header-spacer" />
       <div className="page-content">{children}</div>
       <Footer />
     </div>
