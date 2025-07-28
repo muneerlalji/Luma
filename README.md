@@ -57,7 +57,7 @@ A gentle memory assistant application designed to help people with dementia and 
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/muneerlalji/Luma.git
    cd Luma/backend
    ```
 
