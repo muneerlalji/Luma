@@ -1,22 +1,24 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
-import Page from '../components/page/Page';
-import Button from '../components/button/Button';
-import PeopleSelector from '../components/people-selector/PeopleSelector';
+import { useAuth } from '../../../context/AuthContext';
+import Page from '../../components/page/Page';
+import Button from '../../components/button/Button';
+import { createPerson, CreatePersonRequest } from '../../services/personService';
 import axios from 'axios';
 import './page.css';
 
-export default function CreateMemory() {
+export default function CreatePerson() {
   const { user, token } = useAuth();
   const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [type, setType] = useState('event');
-  const [content, setContent] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [relationship, setRelationship] = useState('');
+  const [notes, setNotes] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -84,28 +86,20 @@ export default function CreateMemory() {
         photoId = uploadResponse.data.id;
       }
 
-      const memoryData = {
-        title,
-        type,
-        content,
-        photoId: photoId,
-        peopleIds: selectedPeople,
+      const personData: CreatePersonRequest = {
+        firstName,
+        lastName,
+        email,
+        phone,
+        relationship,
+        notes,
+        photoId: photoId || undefined,
       };
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/memories`,
-        memoryData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      router.push('/memories');
+      await createPerson(personData, token);
+      router.push('/people');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create memory');
+      setError(err.response?.data?.error || 'Failed to create person');
     } finally {
       setIsSubmitting(false);
     }
@@ -117,60 +111,99 @@ export default function CreateMemory() {
 
   return (
     <Page>
-      <div className="create-memory-container">
-        <div className="create-memory-header">
-          <h1>Create a New Memory</h1>
-          <p>Capture a special moment with a photo and description</p>
+      <div className="create-person-container">
+        <div className="create-person-header">
+          <h1>Add New Person</h1>
+          <p>Add someone important to your life</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="create-memory-form">
-          <div className="form-group">
-            <label htmlFor="title">Memory Title *</label>
-            <input
-              type="text"
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter a title for your memory"
-              required
-              className="form-input"
-            />
+        <form onSubmit={handleSubmit} className="create-person-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="firstName">First Name *</label>
+              <input
+                type="text"
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Enter first name"
+                required
+                className="form-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="lastName">Last Name *</label>
+              <input
+                type="text"
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Enter last name"
+                required
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="email">Email *</label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email address"
+                required
+                className="form-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="phone">Phone *</label>
+              <input
+                type="tel"
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Enter phone number"
+                required
+                className="form-input"
+              />
+            </div>
           </div>
 
           <div className="form-group">
-            <label htmlFor="type">Memory Type *</label>
+            <label htmlFor="relationship">Relationship *</label>
             <select
-              id="type"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
+              id="relationship"
+              value={relationship}
+              onChange={(e) => setRelationship(e.target.value)}
               required
               className="form-select"
             >
-              <option value="event">Event</option>
-              <option value="person">Person</option>
-              <option value="place">Place</option>
-              <option value="milestone">Milestone</option>
+              <option value="">Select relationship</option>
+              <option value="family">Family</option>
+              <option value="friend">Friend</option>
+              <option value="colleague">Colleague</option>
+              <option value="partner">Partner</option>
+              <option value="acquaintance">Acquaintance</option>
               <option value="other">Other</option>
             </select>
           </div>
 
           <div className="form-group">
-            <label htmlFor="content">Description *</label>
+            <label htmlFor="notes">Notes</label>
             <textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Describe your memory in detail..."
-              required
-              rows={4}
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add any additional notes about this person..."
+              rows={3}
               className="form-textarea"
             />
           </div>
-
-          <PeopleSelector
-            selectedPeople={selectedPeople}
-            onPeopleChange={setSelectedPeople}
-          />
 
           <div className="form-group">
             <label htmlFor="photo">Photo (Optional)</label>
@@ -210,7 +243,7 @@ export default function CreateMemory() {
           <div className="form-actions">
             <Button
               type="button"
-              onClick={() => router.push('/memories')}
+              onClick={() => router.push('/people')}
               style={{ background: '#6b7280' }}
               disabled={isSubmitting}
             >
@@ -221,7 +254,7 @@ export default function CreateMemory() {
               style={{ background: '#2563eb' }}
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Creating...' : 'Create Memory'}
+              {isSubmitting ? 'Creating...' : 'Create Person'}
             </Button>
           </div>
         </form>

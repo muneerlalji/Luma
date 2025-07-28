@@ -13,5 +13,6 @@ type Memory struct {
 	Title     string    `gorm:"not null"`
 	Type      string    `gorm:"not null"`
 	Content   string    `gorm:"type:text;not null"`
+	People    []Person  `gorm:"many2many:memory_people;"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 }

@@ -27,20 +27,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refreshUser = useCallback(async (existingToken?: string) => {
-    setLoading(true);
     try {
       const t = existingToken || token;
       if (!t) return;
+      
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
         headers: { Authorization: `Bearer ${t}` },
       });
-      setUser(res.data.user);
-    } catch {
+      
+      setUser(res.data);
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
       setUser(null);
       setToken(null);
       localStorage.removeItem('token');
-    } finally {
-      setLoading(false);
     }
   }, [token]);
 
@@ -58,9 +58,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, { email, password });
-      setUser(res.data.user);
+      
+      console.log('Login response:', res.data);
+      
+      // Set token first
       setToken(res.data.token);
       localStorage.setItem('token', res.data.token);
+      
+      // Then set user
+      setUser(res.data.user);
+      
+      // Optionally refresh user data to ensure consistency
+      await refreshUser(res.data.token);
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -70,6 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, { email, password, displayName });
+    } catch (error) {
+      console.error('Registration failed:', error);
+      throw error;
     } finally {
       setLoading(false);
     }

@@ -44,10 +44,17 @@ func main() {
 	protected.Use(handlers.AuthMiddleware())
 	{
 		protected.GET("/me", handlers.GetCurrentUser)
+		protected.PUT("/profile", handlers.UpdateProfile)
+		protected.PUT("/change-password", handlers.ChangePassword)
+		protected.DELETE("/profile", handlers.DeleteAccount)
 		protected.POST("/upload-photo", handlers.UploadPhoto)
 		protected.POST("/memories", handlers.CreateMemory)
 		protected.GET("/memories", handlers.GetMemories)
 		protected.GET("/photos/:id", handlers.GetPhoto)
+		protected.POST("/people", handlers.CreatePerson)
+		protected.GET("/people", handlers.GetPeople)
+		protected.POST("/chat", handlers.Chat)
+		protected.GET("/chat/history", handlers.GetChatHistory)
 	}
 
 	port := os.Getenv("PORT")

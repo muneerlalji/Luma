@@ -8,6 +8,15 @@ import Photo from '../components/photo/Photo';
 import axios from 'axios';
 import './page.css';
 
+interface Person {
+  id: string;
+  firstName: string;
+  lastName: string;
+  relationship: string;
+  photoId?: string;
+  photoUrl?: string;
+}
+
 interface Memory {
   id: string;
   title: string;
@@ -15,6 +24,7 @@ interface Memory {
   content: string;
   photoId?: string;
   photoUrl?: string;
+  people?: Person[];
   createdAt: string;
 }
 
@@ -153,6 +163,31 @@ export default function Memories() {
                   </span>
                 </div>
                 <p className="memory-content">{memory.content}</p>
+                
+                {memory.people && memory.people.length > 0 && (
+                  <div className="memory-people">
+                    <h4>Tagged People:</h4>
+                    <div className="people-list">
+                      {memory.people.map((person) => (
+                        <div key={person.id} className="person-tag">
+                          <div className="person-tag-photo">
+                            {person.photoUrl ? (
+                              <img src={person.photoUrl} alt={`${person.firstName} ${person.lastName}`} />
+                            ) : (
+                              <div className="person-tag-placeholder">
+                                {person.firstName.charAt(0)}{person.lastName.charAt(0)}
+                              </div>
+                            )}
+                          </div>
+                          <span className="person-tag-name">
+                            {person.firstName} {person.lastName}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 {memory.photoId && (
                   <div className="memory-photo">
                     <Photo 

@@ -51,6 +51,18 @@ export default function Header() {
                 View Memories
               </Button>
               <Button 
+                style={{ background: 'rgba(255, 255, 255, 0.2)', color: '#fff', minWidth: 140, padding: '0.75rem 1.5rem', fontWeight: '600', border: '1px solid rgba(255, 255, 255, 0.3)', whiteSpace: 'nowrap' }} 
+                onClick={() => router.push('/people')}
+              >
+                People
+              </Button>
+              <Button 
+                style={{ background: 'rgba(255, 255, 255, 0.2)', color: '#fff', minWidth: 140, padding: '0.75rem 1.5rem', fontWeight: '600', border: '1px solid rgba(255, 255, 255, 0.3)', whiteSpace: 'nowrap' }} 
+                onClick={() => router.push('/chat')}
+              >
+                AI Assistant
+              </Button>
+              <Button 
                 style={{ background: '#fff', color: '#5b21b6', minWidth: 140, padding: '0.75rem 1.5rem', fontWeight: '600', whiteSpace: 'nowrap' }} 
                 onClick={() => router.push('/create-memory')}
               >
@@ -61,9 +73,49 @@ export default function Header() {
                   <ProfileIcon className="header-profile-icon" />
                 </div>
                 {dropdownOpen && (
-                  <div style={{ position: 'absolute', right: 0, top: 44, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 4px 16px rgba(60,72,100,0.13)', minWidth: 140, zIndex: 10 }}>
-                    <div style={{ padding: '0.75rem 1rem', cursor: 'pointer', fontWeight: 500 }} onClick={() => { setDropdownOpen(false); router.push('/profile'); }}>Profile</div>
-                    <div style={{ padding: '0.75rem 1rem', cursor: 'pointer', color: '#b91c1c', fontWeight: 500 }} onClick={() => { setDropdownOpen(false); logout(); }}>Logout</div>
+                  <div style={{ 
+                    position: 'absolute', 
+                    right: 0, 
+                    top: 44, 
+                    background: '#fff', 
+                    border: '1px solid #e5e7eb', 
+                    borderRadius: 8, 
+                    boxShadow: '0 4px 16px rgba(60,72,100,0.13)', 
+                    minWidth: 140, 
+                    zIndex: 10,
+                    overflow: 'hidden'
+                  }}>
+                    <div 
+                      key="profile"
+                      style={{ 
+                        padding: '0.75rem 1rem', 
+                        cursor: 'pointer', 
+                        fontWeight: 500,
+                        color: '#374151',
+                        borderBottom: '1px solid #f3f4f6',
+                        transition: 'background-color 0.2s'
+                      }} 
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      onClick={() => { setDropdownOpen(false); router.push('/profile'); }}
+                    >
+                      Profile
+                    </div>
+                    <div 
+                      key="logout"
+                      style={{ 
+                        padding: '0.75rem 1rem', 
+                        cursor: 'pointer', 
+                        color: '#dc2626', 
+                        fontWeight: 500,
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      onClick={() => { setDropdownOpen(false); logout(); }}
+                    >
+                      Logout
+                    </div>
                   </div>
                 )}
               </div>

@@ -14,21 +14,23 @@ import (
 
 // CreateMemoryRequest represents the request payload for creating a memory
 type CreateMemoryRequest struct {
-	Title   string     `json:"title" binding:"required"`
-	Type    string     `json:"type" binding:"required"`
-	Content string     `json:"content" binding:"required"`
-	PhotoID *uuid.UUID `json:"photoId,omitempty"`
+	Title     string      `json:"title" binding:"required"`
+	Type      string      `json:"type" binding:"required"`
+	Content   string      `json:"content" binding:"required"`
+	PhotoID   *uuid.UUID  `json:"photoId,omitempty"`
+	PeopleIDs []uuid.UUID `json:"peopleIds,omitempty"`
 }
 
 // MemoryResponse represents the memory data sent to the client
 type MemoryResponse struct {
-	ID        uuid.UUID  `json:"id"`
-	Title     string     `json:"title"`
-	Type      string     `json:"type"`
-	Content   string     `json:"content"`
-	PhotoID   *uuid.UUID `json:"photoId,omitempty"`
-	PhotoURL  *string    `json:"photoUrl,omitempty"`
-	CreatedAt time.Time  `json:"createdAt"`
+	ID        uuid.UUID        `json:"id"`
+	Title     string           `json:"title"`
+	Type      string           `json:"type"`
+	Content   string           `json:"content"`
+	PhotoID   *uuid.UUID       `json:"photoId,omitempty"`
+	PhotoURL  *string          `json:"photoUrl,omitempty"`
+	People    []PersonResponse `json:"people,omitempty"`
+	CreatedAt string           `json:"createdAt"`
 }
 
 // CreateMemory handles memory creation for authenticated users
@@ -77,13 +79,27 @@ func CreateMemory(c *gin.Context) {
 		}
 	}
 
+	// Associate people with memory if provided
+	if len(req.PeopleIDs) > 0 {
+		var people []models.Person
+		if err := db.DB.Where("id IN ? AND user_id = ?", req.PeopleIDs, userUUID).Find(&people).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "One or more people not found or not owned by user"})
+			return
+		}
+
+		if err := db.DB.Model(&memory).Association("People").Append(people); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to associate people with memory"})
+			return
+		}
+	}
+
 	response := MemoryResponse{
 		ID:        memory.ID,
 		Title:     memory.Title,
 		Type:      memory.Type,
 		Content:   memory.Content,
 		PhotoID:   req.PhotoID,
-		CreatedAt: memory.CreatedAt,
+		CreatedAt: memory.CreatedAt.Format(time.RFC3339),
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"memory": response})
@@ -104,7 +120,7 @@ func GetMemories(c *gin.Context) {
 	}
 
 	var memories []models.Memory
-	if err := db.DB.Where("user_id = ?", userUUID).Order("created_at DESC").Find(&memories).Error; err != nil {
+	if err := db.DB.Preload("People").Where("user_id = ?", userUUID).Order("created_at DESC").Find(&memories).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch memories"})
 		return
 	}
@@ -122,6 +138,21 @@ func GetMemories(c *gin.Context) {
 			photoURL = &url
 		}
 
+		// Convert people to PersonResponse
+		var personResponses []PersonResponse
+		for _, person := range memory.People {
+			personResponses = append(personResponses, PersonResponse{
+				ID:           person.ID,
+				FirstName:    person.FirstName,
+				LastName:     person.LastName,
+				Email:        person.Email,
+				Phone:        person.Phone,
+				Relationship: person.Relationship,
+				Notes:        person.Notes,
+				PhotoID:      person.PhotoID,
+			})
+		}
+
 		response := MemoryResponse{
 			ID:        memory.ID,
 			Title:     memory.Title,
@@ -129,7 +160,8 @@ func GetMemories(c *gin.Context) {
 			Content:   memory.Content,
 			PhotoID:   photoID,
 			PhotoURL:  photoURL,
-			CreatedAt: memory.CreatedAt,
+			People:    personResponses,
+			CreatedAt: memory.CreatedAt.Format(time.RFC3339),
 		}
 		responses = append(responses, response)
 	}

@@ -29,6 +29,8 @@ func Init() {
 		&models.User{},
 		&models.Memory{},
 		&models.Photo{},
+		&models.Person{},
+		&models.ChatMessage{},
 	)
 	if err != nil {
 		log.Fatal("AutoMigrate error:", err)
