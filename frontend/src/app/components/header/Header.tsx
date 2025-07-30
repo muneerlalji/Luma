@@ -31,9 +31,6 @@ export default function Header() {
     <header className="header">
       <div className="header-inner" style={{ justifyContent: 'space-between', width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }} onClick={() => router.push('/')}>
-          <div className="header-logo">
-            <Image src="/luma-logo.svg" alt="Luma Logo" width={48} height={48} />
-          </div>
           <h1 className="header-title">Luma</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', position: 'relative' }}>

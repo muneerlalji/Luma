@@ -1,28 +1,13 @@
-
 'use client';
 import "./page.css"
-import Image from "next/image";
 import Page from "./components/page/Page";
-import { useAuth } from "../context/AuthContext";
-import { useRouter } from "next/navigation";
-import Button from "./components/button/Button";
 
 export default function Home() {
-  const { user } = useAuth();
-  const router = useRouter();
 
   return (
     <Page isLandingPage={true}>
       <main className="home-main">
         <section className="home-section">
-          <Image
-            src="/luma-hero.svg"
-            alt="Friendly illustration"
-            width={120}
-            height={120}
-            className="home-hero-img"
-            priority
-          />
           <h1 className="home-welcome-title">Welcome to Luma</h1>
           <p className="home-description">
             Luma is your gentle companion for memory support. We use your photos and the people you tag in them to help you remember cherished events and loved ones, while encouraging you to stay connected.

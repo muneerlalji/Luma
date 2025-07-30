@@ -5,11 +5,12 @@ import { useAuth } from '../../context/AuthContext';
 import Page from '../components/page/Page';
 import Button from '../components/button/Button';
 import PeopleSelector from '../components/people-selector/PeopleSelector';
+import AuthGuard from '../components/auth-guard/AuthGuard';
 import axios from 'axios';
 import './page.css';
 
 export default function CreateMemory() {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [type, setType] = useState('event');
@@ -20,12 +21,6 @@ export default function CreateMemory() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-    }
-  }, [user, router]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -58,7 +53,7 @@ export default function CreateMemory() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !token) return;
+    if (!token) return;
     
     setIsSubmitting(true);
     setError('');
@@ -111,121 +106,119 @@ export default function CreateMemory() {
     }
   };
 
-  if (!user) {
-    return null;
-  }
-
   return (
-    <Page>
-      <div className="create-memory-container">
-        <div className="create-memory-header">
-          <h1>Create a New Memory</h1>
-          <p>Capture a special moment with a photo and description</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="create-memory-form">
-          <div className="form-group">
-            <label htmlFor="title">Memory Title *</label>
-            <input
-              type="text"
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter a title for your memory"
-              required
-              className="form-input"
-            />
+    <AuthGuard>
+      <Page>
+        <div className="create-memory-container">
+          <div className="create-memory-header">
+            <h1>Create a New Memory</h1>
+            <p>Capture a special moment with a photo and description</p>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="type">Memory Type *</label>
-            <select
-              id="type"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              required
-              className="form-select"
-            >
-              <option value="event">Event</option>
-              <option value="person">Person</option>
-              <option value="place">Place</option>
-              <option value="milestone">Milestone</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="content">Description *</label>
-            <textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Describe your memory in detail..."
-              required
-              rows={4}
-              className="form-textarea"
-            />
-          </div>
-
-          <PeopleSelector
-            selectedPeople={selectedPeople}
-            onPeopleChange={setSelectedPeople}
-          />
-
-          <div className="form-group">
-            <label htmlFor="photo">Photo (Optional)</label>
-            <div className="photo-upload-section">
+          <form onSubmit={handleSubmit} className="create-memory-form">
+            <div className="form-group">
+              <label htmlFor="title">Memory Title *</label>
               <input
-                type="file"
-                id="photo"
-                ref={fileInputRef}
-                onChange={handleFileSelect}
-                accept="image/*"
-                className="file-input"
+                type="text"
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter a title for your memory"
+                required
+                className="form-input"
               />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="type">Memory Type *</label>
+              <select
+                id="type"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                required
+                className="form-select"
+              >
+                <option value="event">Event</option>
+                <option value="person">Person</option>
+                <option value="place">Place</option>
+                <option value="milestone">Milestone</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="content">Description *</label>
+              <textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Describe your memory in detail..."
+                required
+                rows={4}
+                className="form-textarea"
+              />
+            </div>
+
+            <PeopleSelector
+              selectedPeople={selectedPeople}
+              onPeopleChange={setSelectedPeople}
+            />
+
+            <div className="form-group">
+              <label htmlFor="photo">Photo (Optional)</label>
+              <div className="photo-upload-section">
+                <input
+                  type="file"
+                  id="photo"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  accept="image/*"
+                  className="file-input"
+                />
+                <Button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ background: '#6b7280' }}
+                >
+                  Choose Photo
+                </Button>
+              </div>
+              {error && <p className="error-message">{error}</p>}
+            </div>
+
+            {previewUrl && (
+              <div className="photo-preview">
+                <img src={previewUrl} alt="Preview" className="preview-image" />
+                <Button
+                  type="button"
+                  onClick={removePhoto}
+                  style={{ background: '#dc2626', marginTop: '0.5rem' }}
+                >
+                  Remove Photo
+                </Button>
+              </div>
+            )}
+
+            <div className="form-actions">
               <Button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => router.push('/memories')}
                 style={{ background: '#6b7280' }}
+                disabled={isSubmitting}
               >
-                Choose Photo
+                Cancel
               </Button>
-            </div>
-            {error && <p className="error-message">{error}</p>}
-          </div>
-
-          {previewUrl && (
-            <div className="photo-preview">
-              <img src={previewUrl} alt="Preview" className="preview-image" />
               <Button
-                type="button"
-                onClick={removePhoto}
-                style={{ background: '#dc2626', marginTop: '0.5rem' }}
+                type="submit"
+                style={{ background: '#2563eb' }}
+                disabled={isSubmitting}
               >
-                Remove Photo
+                {isSubmitting ? 'Creating...' : 'Create Memory'}
               </Button>
             </div>
-          )}
-
-          <div className="form-actions">
-            <Button
-              type="button"
-              onClick={() => router.push('/memories')}
-              style={{ background: '#6b7280' }}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              style={{ background: '#2563eb' }}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Creating...' : 'Create Memory'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </Page>
+          </form>
+        </div>
+      </Page>
+    </AuthGuard>
   );
 } 

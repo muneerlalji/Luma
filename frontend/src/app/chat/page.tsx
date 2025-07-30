@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import Page from '../components/page/Page';
+import AuthGuard from '../components/auth-guard/AuthGuard';
 import axios from 'axios';
 import './page.css';
 
@@ -15,8 +15,7 @@ interface ChatMessage {
 }
 
 export default function ChatPage() {
-  const { user, token } = useAuth();
-  const router = useRouter();
+  const { token, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -25,27 +24,7 @@ export default function ChatPage() {
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    
-    loadChatHistory();
-  }, [user, router]);
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const loadChatHistory = async () => {
-    if (!token) return;
-    
+  const loadChatHistory = async (token: string) => {
     try {
       setLoadingHistory(true);
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/chat/history`, {
@@ -59,6 +38,21 @@ export default function ChatPage() {
       setLoadingHistory(false);
     }
   };
+
+  // Only fetch data when auth is done loading and we have a token
+  useEffect(() => {
+    if (!authLoading && token && loadingHistory) {
+      loadChatHistory(token);
+    }
+  }, [authLoading, token, loadingHistory]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    const scrollToBottom = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+    scrollToBottom();
+  }, [messages]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,107 +175,103 @@ export default function ChatPage() {
     });
   };
 
-  if (!user) {
-    return null;
-  }
-
-  if (loadingHistory) {
-    return (
-      <Page>
-        <div className="chat-container">
-          <div className="loading">Loading chat history...</div>
-        </div>
-      </Page>
-    );
-  }
-
   return (
-    <Page>
-      <div className="chat-container">
-        <div className="chat-header">
-          <div>
-            <h1>AI Memory Assistant</h1>
-            <p>Ask me anything about your memories, people, or events. I'm here to help you remember.</p>
+    <AuthGuard>
+      {loadingHistory ? (
+        <Page>
+          <div className="chat-container">
+            <div className="loading">Loading chat history...</div>
           </div>
-        </div>
-
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
-
-        <div className="chat-messages">
-          {messages.length === 0 && !isLoading && (
-            <div className="welcome-message">
-              <h3>Welcome to your Memory Assistant!</h3>
-              <p>I can help you remember:</p>
-              <ol>
-                <li key="people">People in your life and their details</li>
-                <li key="events">Important events and memories</li>
-                <li key="personal">Personal information about yourself</li>
-                <li key="questions">Any questions you might have</li>
-              </ol>
-              <p>Just ask me anything - I'm here to help!</p>
-            </div>
-          )}
-
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`message ${message.role === 'user' ? 'user-message' : 'assistant-message'}`}
-            >
-              <div className="message-content">
-                <div className={`message-text ${streamingMessageId === message.id ? 'streaming' : ''}`}>
-                  {message.content}
-                </div>
-                <div className="message-time">{formatTime(message.createdAt)}</div>
+        </Page>
+      ) : (
+        <Page>
+          <div className="chat-container">
+            <div className="chat-header">
+              <div>
+                <h1>AI Memory Assistant</h1>
+                <p>Ask me anything about your memories, people, or events. I'm here to help you remember.</p>
               </div>
             </div>
-          ))}
 
-          {isLoading && (
-            <div className="message assistant-message">
-              <div className="message-content">
-                <div className="typing-indicator">
-                  <span key="dot1"></span>
-                  <span key="dot2"></span>
-                  <span key="dot3"></span>
-                </div>
+            {error && (
+              <div className="error-message">
+                {error}
               </div>
-            </div>
-          )}
+            )}
 
-          <div ref={messagesEndRef} />
-        </div>
-
-        <form onSubmit={sendMessage} className="chat-input-form">
-          <div className="input-container">
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Ask me about your memories, people, or anything else..."
-              disabled={isLoading}
-              className="chat-input"
-            />
-            <button
-              type="submit"
-              disabled={!inputMessage.trim() || isLoading}
-              className="send-button"
-            >
-              {isLoading ? (
-                <div className="loading-spinner"></div>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="22" y1="2" x2="11" y2="13"></line>
-                  <polygon points="22,2 15,22 11,13 2,9"></polygon>
-                </svg>
+            <div className="chat-messages">
+              {messages.length === 0 && !isLoading && (
+                <div className="welcome-message">
+                  <h3>Welcome to your Memory Assistant!</h3>
+                  <p>I can help you remember:</p>
+                  <ol>
+                    <li key="people">People in your life and their details</li>
+                    <li key="events">Important events and memories</li>
+                    <li key="personal">Personal information about yourself</li>
+                    <li key="questions">Any questions you might have</li>
+                  </ol>
+                  <p>Just ask me anything - I'm here to help!</p>
+                </div>
               )}
-            </button>
+
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`message ${message.role === 'user' ? 'user-message' : 'assistant-message'}`}
+                >
+                  <div className="message-content">
+                    <div className={`message-text ${streamingMessageId === message.id ? 'streaming' : ''}`}>
+                      {message.content}
+                    </div>
+                    <div className="message-time">{formatTime(message.createdAt)}</div>
+                  </div>
+                </div>
+              ))}
+
+              {isLoading && (
+                <div className="message assistant-message">
+                  <div className="message-content">
+                    <div className="typing-indicator">
+                      <span key="dot1"></span>
+                      <span key="dot2"></span>
+                      <span key="dot3"></span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            <form onSubmit={sendMessage} className="chat-input-form">
+              <div className="input-container">
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  placeholder="Ask me about your memories, people, or anything else..."
+                  disabled={isLoading}
+                  className="chat-input"
+                />
+                <button
+                  type="submit"
+                  disabled={!inputMessage.trim() || isLoading}
+                  className="send-button"
+                >
+                  {isLoading ? (
+                    <div className="loading-spinner"></div>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22,2 15,22 11,13 2,9"></polygon>
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
-    </Page>
+        </Page>
+      )}
+    </AuthGuard>
   );
 } 

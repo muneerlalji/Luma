@@ -5,11 +5,12 @@ import { useAuth } from '../../../context/AuthContext';
 import Page from '../../components/page/Page';
 import Button from '../../components/button/Button';
 import { createPerson, CreatePersonRequest } from '../../services/personService';
+import AuthGuard from '../../components/auth-guard/AuthGuard';
 import axios from 'axios';
 import './page.css';
 
 export default function CreatePerson() {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const router = useRouter();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -22,12 +23,6 @@ export default function CreatePerson() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-    }
-  }, [user, router]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -60,7 +55,7 @@ export default function CreatePerson() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !token) return;
+    if (!token) return;
     
     setIsSubmitting(true);
     setError('');
@@ -105,160 +100,158 @@ export default function CreatePerson() {
     }
   };
 
-  if (!user) {
-    return null;
-  }
-
   return (
-    <Page>
-      <div className="create-person-container">
-        <div className="create-person-header">
-          <h1>Add New Person</h1>
-          <p>Add someone important to your life</p>
-        </div>
+    <AuthGuard>
+      <Page>
+        <div className="create-person-container">
+          <div className="create-person-header">
+            <h1>Add New Person</h1>
+            <p>Add someone important to your life</p>
+          </div>
 
-        <form onSubmit={handleSubmit} className="create-person-form">
-          <div className="form-row">
+          <form onSubmit={handleSubmit} className="create-person-form">
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="firstName">First Name *</label>
+                <input
+                  type="text"
+                  id="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Enter first name"
+                  required
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="lastName">Last Name *</label>
+                <input
+                  type="text"
+                  id="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Enter last name"
+                  required
+                  className="form-input"
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="email">Email *</label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter email address"
+                  required
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="phone">Phone *</label>
+                <input
+                  type="tel"
+                  id="phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Enter phone number"
+                  required
+                  className="form-input"
+                />
+              </div>
+            </div>
+
             <div className="form-group">
-              <label htmlFor="firstName">First Name *</label>
-              <input
-                type="text"
-                id="firstName"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Enter first name"
+              <label htmlFor="relationship">Relationship *</label>
+              <select
+                id="relationship"
+                value={relationship}
+                onChange={(e) => setRelationship(e.target.value)}
                 required
-                className="form-input"
+                className="form-select"
+              >
+                <option value="">Select relationship</option>
+                <option value="family">Family</option>
+                <option value="friend">Friend</option>
+                <option value="colleague">Colleague</option>
+                <option value="partner">Partner</option>
+                <option value="acquaintance">Acquaintance</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="notes">Notes</label>
+              <textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add any additional notes about this person..."
+                rows={3}
+                className="form-textarea"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="lastName">Last Name *</label>
-              <input
-                type="text"
-                id="lastName"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Enter last name"
-                required
-                className="form-input"
-              />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="email">Email *</label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter email address"
-                required
-                className="form-input"
-              />
+              <label htmlFor="photo">Photo (Optional)</label>
+              <div className="photo-upload-section">
+                <input
+                  type="file"
+                  id="photo"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  accept="image/*"
+                  className="file-input"
+                />
+                <Button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ background: '#6b7280' }}
+                >
+                  Choose Photo
+                </Button>
+              </div>
+              {error && <p className="error-message">{error}</p>}
             </div>
 
-            <div className="form-group">
-              <label htmlFor="phone">Phone *</label>
-              <input
-                type="tel"
-                id="phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Enter phone number"
-                required
-                className="form-input"
-              />
-            </div>
-          </div>
+            {previewUrl && (
+              <div className="photo-preview">
+                <img src={previewUrl} alt="Preview" className="preview-image" />
+                <Button
+                  type="button"
+                  onClick={removePhoto}
+                  style={{ background: '#dc2626', marginTop: '0.5rem' }}
+                >
+                  Remove Photo
+                </Button>
+              </div>
+            )}
 
-          <div className="form-group">
-            <label htmlFor="relationship">Relationship *</label>
-            <select
-              id="relationship"
-              value={relationship}
-              onChange={(e) => setRelationship(e.target.value)}
-              required
-              className="form-select"
-            >
-              <option value="">Select relationship</option>
-              <option value="family">Family</option>
-              <option value="friend">Friend</option>
-              <option value="colleague">Colleague</option>
-              <option value="partner">Partner</option>
-              <option value="acquaintance">Acquaintance</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="notes">Notes</label>
-            <textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add any additional notes about this person..."
-              rows={3}
-              className="form-textarea"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="photo">Photo (Optional)</label>
-            <div className="photo-upload-section">
-              <input
-                type="file"
-                id="photo"
-                ref={fileInputRef}
-                onChange={handleFileSelect}
-                accept="image/*"
-                className="file-input"
-              />
+            <div className="form-actions">
               <Button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => router.push('/people')}
                 style={{ background: '#6b7280' }}
+                disabled={isSubmitting}
               >
-                Choose Photo
+                Cancel
               </Button>
-            </div>
-            {error && <p className="error-message">{error}</p>}
-          </div>
-
-          {previewUrl && (
-            <div className="photo-preview">
-              <img src={previewUrl} alt="Preview" className="preview-image" />
               <Button
-                type="button"
-                onClick={removePhoto}
-                style={{ background: '#dc2626', marginTop: '0.5rem' }}
+                type="submit"
+                style={{ background: '#2563eb' }}
+                disabled={isSubmitting}
               >
-                Remove Photo
+                {isSubmitting ? 'Creating...' : 'Create Person'}
               </Button>
             </div>
-          )}
-
-          <div className="form-actions">
-            <Button
-              type="button"
-              onClick={() => router.push('/people')}
-              style={{ background: '#6b7280' }}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              style={{ background: '#2563eb' }}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Creating...' : 'Create Person'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </Page>
+          </form>
+        </div>
+      </Page>
+    </AuthGuard>
   );
 } 
