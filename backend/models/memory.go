@@ -9,7 +9,7 @@ import (
 type Memory struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null"`
-	User      User      `gorm:"foreignKey:UserID"`
+	User      User      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
 	Title     string    `gorm:"not null"`
 	Type      string    `gorm:"not null"`
 	Content   string    `gorm:"type:text;not null"`

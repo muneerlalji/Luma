@@ -137,10 +137,14 @@
   font-size: 1rem;
   line-height: 1.6;
   word-wrap: break-word;
-  white-space: pre-wrap;
+  white-space: pre-wrap !important;
+  white-space: -moz-pre-wrap !important;
+  white-space: -pre-wrap !important;
+  white-space: -o-pre-wrap !important;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
-/* Streaming text effect */
 .message-text.streaming {
   position: relative;
 }

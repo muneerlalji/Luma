@@ -103,51 +103,57 @@ export default function ChatPage() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Debug response headers
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-      console.log('Response type:', response.type);
-      console.log('Response body used:', response.bodyUsed);
-
       // Handle streaming response
       const reader = response.body?.getReader();
       if (!reader) {
         throw new Error('No response body reader available');
       }
 
-      const decoder = new TextDecoder();
+      const decoder = new TextDecoder('utf-8', { fatal: false });
       let accumulatedContent = '';
       let chunkCount = 0;
+      let buffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
         
         if (done) {
-          console.log('Streaming complete. Total chunks:', chunkCount);
+          // Process any remaining buffer content
+          if (buffer.trim()) {
+            const lines = buffer.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data.trim() && data !== '[DONE]') {
+                  // Unescape newlines from SSE format
+                  const unescapedData = data.replace(/\\n/g, '\n');
+                  accumulatedContent += unescapedData;
+                }
+              }
+            }
+          }
           break;
         }
         
         chunkCount++;
         const chunk = decoder.decode(value, { stream: true });
-        console.log(`Chunk ${chunkCount}:`, chunk);
-        console.log(`Chunk ${chunkCount} length:`, chunk.length);
         
-        // Parse Server-Sent Events format
-        const lines = chunk.split('\n');
+        buffer += chunk;
+        const lines = buffer.split('\n');
+        
+        buffer = lines.pop() || '';
+        
         for (const line of lines) {
           if (line.startsWith('data: ')) {
-            const data = line.slice(6); // Remove 'data: ' prefix
-            if (data.trim() && data !== '[DONE]') {
-              console.log('Extracted data:', data);
-              accumulatedContent += data;
+            const data = line.slice(6);
+            if (data !== '' && data !== '[DONE]') {
+              // Unescape newlines from SSE format
+              const unescapedData = data.replace(/\\n/g, '\n');
+              accumulatedContent += unescapedData;
             }
           }
         }
         
-        console.log('Accumulated content length:', accumulatedContent.length);
-        console.log('Accumulated content:', accumulatedContent);
-        
-        // Update the assistant message with accumulated content
         setMessages(prev => prev.map(msg => 
           msg.id === assistantMessageId 
             ? { ...msg, content: accumulatedContent }
@@ -155,10 +161,15 @@ export default function ChatPage() {
         ));
       }
 
+      setMessages(prev => prev.map(msg => 
+        msg.id === assistantMessageId 
+          ? { ...msg, content: accumulatedContent }
+          : msg
+      ));
+
     } catch (error: any) {
       setError(error.message || 'Failed to send message. Please try again.');
       
-      // Remove both messages if the request failed
       setMessages(prev => prev.filter(msg => 
         msg.id !== newUserMessage.id && msg.id !== assistantMessageId
       ));

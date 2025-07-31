@@ -70,17 +70,17 @@ func Chat(c *gin.Context) {
 
 	// Check if streaming is requested
 	if c.Query("stream") == "true" {
-		// Set headers for streaming
-		c.Header("Content-Type", "text/plain")
+		// Set headers for Server-Sent Events
+		c.Header("Content-Type", "text/event-stream")
 		c.Header("Cache-Control", "no-cache")
 		c.Header("Connection", "keep-alive")
-		c.Header("Transfer-Encoding", "chunked")
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Headers", "Cache-Control")
 
-		// Generate streaming AI response
+		// Handle streaming chat
 		if err := generateStreamingAIResponse(c, userID.(uuid.UUID), req.Message, memories, people); err != nil {
-			fmt.Printf("Error generating streaming AI response: %v\n", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate response"})
-			return
+			fmt.Printf("Streaming chat error: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Streaming failed"})
 		}
 		return
 	}
@@ -252,12 +252,12 @@ User's Personal Information:
 	// Prepare Claude API request for streaming
 	claudeReq := ClaudeRequest{
 		Model:       "claude-3-5-sonnet-20241022",
-		MaxTokens:   1000,
+		MaxTokens:   2000,
 		Temperature: 0.7,
 		Messages: []ClaudeMessage{
 			{Role: "user", Content: systemPrompt + "\n\nUser: " + userMessage},
 		},
-		Stream: true, // Explicitly request streaming
+		Stream: true,
 	}
 
 	// Make API request
@@ -293,15 +293,18 @@ User's Personal Information:
 
 	// Read and stream the response
 	scanner := bufio.NewScanner(resp.Body)
+	buf := make([]byte, 0, 1024*1024)
+	scanner.Buffer(buf, 1024*1024)
+
 	var fullResponse strings.Builder
 
 	for scanner.Scan() {
 		line := scanner.Text()
 
 		// Skip empty lines
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
+		// if strings.TrimSpace(line) == "" {
+		// 	continue
+		// }
 
 		// Handle Server-Sent Events format
 		if strings.HasPrefix(line, "data: ") {
@@ -322,22 +325,26 @@ User's Personal Information:
 			// Extract text content
 			if claudeStreamResp.Type == "content_block_delta" &&
 				(claudeStreamResp.Delta.Type == "text" || claudeStreamResp.Delta.Type == "text_delta") {
-				// Send text directly to frontend
-				c.Writer.Write([]byte(fmt.Sprintf("data: %s\n\n", claudeStreamResp.Delta.Text)))
+
+				// Escape newlines for SSE format
+				escapedText := strings.ReplaceAll(claudeStreamResp.Delta.Text, "\n", "\\n")
+
+				fmt.Printf("Streaming response: %s\n", claudeStreamResp.Delta.Text)
+				c.Writer.Write([]byte(fmt.Sprintf("data: %s\n\n", escapedText)))
 				c.Writer.Flush()
 				fullResponse.WriteString(claudeStreamResp.Delta.Text)
 			}
 		} else {
-			// Try to parse as direct JSON (not SSE format)
 			var claudeStreamResp ClaudeStreamingResponse
 			if err := json.Unmarshal([]byte(line), &claudeStreamResp); err == nil {
-				fmt.Printf("Direct JSON parsed: Type=%s, Delta.Type=%s, Delta.Text=%s\n",
-					claudeStreamResp.Type, claudeStreamResp.Delta.Type, claudeStreamResp.Delta.Text)
-
 				if claudeStreamResp.Type == "content_block_delta" &&
 					(claudeStreamResp.Delta.Type == "text" || claudeStreamResp.Delta.Type == "text_delta") {
-					// Send text directly to frontend
-					c.Writer.Write([]byte(fmt.Sprintf("data: %s\n\n", claudeStreamResp.Delta.Text)))
+
+					// Escape newlines for SSE format
+					escapedText := strings.ReplaceAll(claudeStreamResp.Delta.Text, "\n", "\\n")
+
+					fmt.Printf("ELSE response: %s\n", claudeStreamResp.Delta.Text)
+					c.Writer.Write([]byte(fmt.Sprintf("data: %s\n\n", escapedText)))
 					c.Writer.Flush()
 					fullResponse.WriteString(claudeStreamResp.Delta.Text)
 				}
@@ -348,6 +355,11 @@ User's Personal Information:
 	if err := scanner.Err(); err != nil {
 		fmt.Printf("Error reading streaming response: %v\n", err)
 		return err
+	}
+
+	// Check if we have any remaining buffer content
+	if buffer := scanner.Bytes(); len(buffer) > 0 {
+		fmt.Printf("Warning: Unprocessed buffer content: %s\n", string(buffer))
 	}
 
 	// Save the messages to database after streaming is complete

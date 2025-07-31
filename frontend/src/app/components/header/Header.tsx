@@ -42,28 +42,22 @@ export default function Header() {
           ) : (
             <>
               <Button 
-                style={{ background: 'rgba(255, 255, 255, 0.2)', color: '#fff', minWidth: 140, padding: '0.75rem 1.5rem', fontWeight: '600', border: '1px solid rgba(255, 255, 255, 0.3)', whiteSpace: 'nowrap' }} 
+                style={{ background: 'rgba(255, 255, 255, 0.2)', color: '#fff', minWidth: 150, padding: '0.875rem 1.75rem', fontWeight: '600', border: '1px solid rgba(255, 255, 255, 0.3)', whiteSpace: 'nowrap', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
                 onClick={() => router.push('/memories')}
               >
                 View Memories
               </Button>
               <Button 
-                style={{ background: 'rgba(255, 255, 255, 0.2)', color: '#fff', minWidth: 140, padding: '0.75rem 1.5rem', fontWeight: '600', border: '1px solid rgba(255, 255, 255, 0.3)', whiteSpace: 'nowrap' }} 
+                style={{ background: 'rgba(255, 255, 255, 0.2)', color: '#fff', minWidth: 150, padding: '0.875rem 1.75rem', fontWeight: '600', border: '1px solid rgba(255, 255, 255, 0.3)', whiteSpace: 'nowrap', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
                 onClick={() => router.push('/people')}
               >
                 People
               </Button>
               <Button 
-                style={{ background: 'rgba(255, 255, 255, 0.2)', color: '#fff', minWidth: 140, padding: '0.75rem 1.5rem', fontWeight: '600', border: '1px solid rgba(255, 255, 255, 0.3)', whiteSpace: 'nowrap' }} 
+                style={{ background: 'rgba(255, 255, 255, 0.2)', color: '#fff', minWidth: 150, padding: '0.875rem 1.75rem', fontWeight: '600', border: '1px solid rgba(255, 255, 255, 0.3)', whiteSpace: 'nowrap', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
                 onClick={() => router.push('/chat')}
               >
                 AI Assistant
-              </Button>
-              <Button 
-                style={{ background: '#fff', color: '#5b21b6', minWidth: 140, padding: '0.75rem 1.5rem', fontWeight: '600', whiteSpace: 'nowrap' }} 
-                onClick={() => router.push('/create-memory')}
-              >
-                Create Memory
               </Button>
               <div style={{ position: 'relative' }} ref={dropdownRef}>
                 <div style={{ cursor: 'pointer' }} onClick={() => setDropdownOpen(v => !v)} title="Profile">

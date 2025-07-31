@@ -48,7 +48,7 @@ export default function Memories() {
         }
       );
       
-      setMemories(response.data.memories);
+      setMemories(response.data.memories || []);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch memories');
     } finally {

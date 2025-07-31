@@ -10,7 +10,7 @@ import (
 type ChatMessage struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
-	User      User      `gorm:"foreignKey:UserID" json:"-"`
+	User      User      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 	Role      string    `gorm:"not null" json:"role"`
 	Content   string    `gorm:"type:text;not null" json:"content"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
