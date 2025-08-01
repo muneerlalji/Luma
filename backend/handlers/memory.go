@@ -125,7 +125,8 @@ func GetMemories(c *gin.Context) {
 		return
 	}
 
-	var responses []MemoryResponse
+	responses := make([]MemoryResponse, 0)
+
 	for _, memory := range memories {
 		// Get associated photo if any
 		var photo models.Photo

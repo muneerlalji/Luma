@@ -9,7 +9,16 @@ import (
 	gomail "gopkg.in/mail.v2"
 )
 
-func SendEmail(to, subject, body string) error {
+// EmailService defines the interface for email operations
+type EmailService interface {
+	SendEmail(to, subject, body string) error
+}
+
+// DefaultEmailService implements EmailService using SMTP
+type DefaultEmailService struct{}
+
+// SendEmail sends an email using SMTP configuration
+func (s *DefaultEmailService) SendEmail(to, subject, body string) error {
 	smtpHost := os.Getenv("SMTP_HOST")
 	smtpPort := os.Getenv("SMTP_PORT")
 	smtpUser := os.Getenv("SMTP_USER")
@@ -39,4 +48,22 @@ func SendEmail(to, subject, body string) error {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 	return nil
+}
+
+// Global email service instance
+var emailService EmailService = &DefaultEmailService{}
+
+// SetEmailService sets the global email service (useful for testing)
+func SetEmailService(service EmailService) {
+	emailService = service
+}
+
+// GetEmailService returns the current email service
+func GetEmailService() EmailService {
+	return emailService
+}
+
+// SendEmail is a convenience function that uses the global email service
+func SendEmail(to, subject, body string) error {
+	return emailService.SendEmail(to, subject, body)
 }

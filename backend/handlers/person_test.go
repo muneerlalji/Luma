@@ -8,9 +8,10 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/muneerlalji/Luma/db"
 	"github.com/muneerlalji/Luma/handlers"
 	"github.com/muneerlalji/Luma/models"
+	"github.com/muneerlalji/Luma/testutils"
+	"github.com/muneerlalji/Luma/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -26,16 +27,14 @@ type PersonTestSuite struct {
 
 func (suite *PersonTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
-	suite.db = db.DB
+	suite.db = testutils.SetupTestDB()
 
 	// Auto-migrate test database
 	suite.db.AutoMigrate(&models.User{}, &models.Person{})
 }
 
 func (suite *PersonTestSuite) SetupTest() {
-	// Clear database before each test
-	suite.db.Exec("DELETE FROM people")
-	suite.db.Exec("DELETE FROM users")
+	testutils.CleanupTestDB(suite.db)
 
 	// Create a test user
 	suite.user = models.User{
@@ -46,8 +45,11 @@ func (suite *PersonTestSuite) SetupTest() {
 	}
 	suite.db.Create(&suite.user)
 
-	// Generate a test token
-	suite.token = "test-token"
+	token, err := utils.GenerateToken(suite.user.ID, suite.user.Email)
+	if err != nil {
+		suite.T().Fatalf("Failed to generate test token: %v", err)
+	}
+	suite.token = token
 
 	// Setup router
 	suite.router = gin.Default()
@@ -55,8 +57,8 @@ func (suite *PersonTestSuite) SetupTest() {
 	// Setup protected routes
 	protected := suite.router.Group("/")
 	protected.Use(func(c *gin.Context) {
-		// Mock authentication middleware
-		c.Set("userID", suite.user.ID)
+		// Mock authentication middleware - use "user_id" key to match handler expectation
+		c.Set("user_id", suite.user.ID)
 		c.Next()
 	})
 	{
@@ -66,20 +68,18 @@ func (suite *PersonTestSuite) SetupTest() {
 }
 
 func (suite *PersonTestSuite) TearDownSuite() {
-	// Clean up test database
-	suite.db.Exec("DROP TABLE IF EXISTS people")
-	suite.db.Exec("DROP TABLE IF EXISTS users")
+	// Clean up test database using testutils
+	testutils.CleanupTestDB(suite.db)
 }
 
 func (suite *PersonTestSuite) TestCreatePerson_Success() {
-	personData := models.Person{
+	personData := handlers.CreatePersonRequest{
 		FirstName:    "John",
 		LastName:     "Doe",
 		Email:        "john@example.com",
 		Phone:        "123-456-7890",
 		Relationship: "Friend",
 		Notes:        "Test person notes",
-		UserID:       suite.user.ID,
 	}
 
 	jsonData, _ := json.Marshal(personData)
@@ -92,11 +92,13 @@ func (suite *PersonTestSuite) TestCreatePerson_Success() {
 
 	assert.Equal(suite.T(), http.StatusCreated, w.Code)
 
-	var response map[string]interface{}
+	var response handlers.PersonResponse
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(suite.T(), err)
 
-	assert.Contains(suite.T(), response, "person")
+	assert.Equal(suite.T(), personData.FirstName, response.FirstName)
+	assert.Equal(suite.T(), personData.LastName, response.LastName)
+	assert.Equal(suite.T(), personData.Email, response.Email)
 
 	// Verify person was created in database
 	var person models.Person
@@ -113,7 +115,6 @@ func (suite *PersonTestSuite) TestCreatePerson_InvalidData() {
 	personData := map[string]interface{}{
 		"lastName":     "Doe",
 		"relationship": "Friend",
-		// Missing firstName and email
 	}
 
 	jsonData, _ := json.Marshal(personData)
@@ -162,15 +163,12 @@ func (suite *PersonTestSuite) TestGetPeople_Success() {
 
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var responses []handlers.PersonResponse
+	err := json.Unmarshal(w.Body.Bytes(), &responses)
 	assert.NoError(suite.T(), err)
 
-	assert.Contains(suite.T(), response, "people")
-
 	// Verify we got the correct number of people
-	peopleArray := response["people"].([]interface{})
-	assert.Len(suite.T(), peopleArray, 2)
+	assert.Len(suite.T(), responses, 2)
 }
 
 func (suite *PersonTestSuite) TestGetPeople_Empty() {
@@ -182,15 +180,12 @@ func (suite *PersonTestSuite) TestGetPeople_Empty() {
 
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var responses []handlers.PersonResponse
+	err := json.Unmarshal(w.Body.Bytes(), &responses)
 	assert.NoError(suite.T(), err)
 
-	assert.Contains(suite.T(), response, "people")
-
 	// Verify empty people array
-	peopleArray := response["people"].([]interface{})
-	assert.Len(suite.T(), peopleArray, 0)
+	assert.Len(suite.T(), responses, 0)
 }
 
 func (suite *PersonTestSuite) TestGetPeople_UserIsolation() {
@@ -235,13 +230,12 @@ func (suite *PersonTestSuite) TestGetPeople_UserIsolation() {
 
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var responses []handlers.PersonResponse
+	err := json.Unmarshal(w.Body.Bytes(), &responses)
 	assert.NoError(suite.T(), err)
 
 	// Verify only the first user's people are returned
-	peopleArray := response["people"].([]interface{})
-	assert.Len(suite.T(), peopleArray, 1)
+	assert.Len(suite.T(), responses, 1)
 }
 
 func TestPersonTestSuite(t *testing.T) {

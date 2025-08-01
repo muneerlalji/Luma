@@ -335,16 +335,16 @@ func AuthMiddleware() gin.HandlerFunc {
 
 // ConfirmEmail handles email confirmation
 func ConfirmEmail(c *gin.Context) {
-	token := c.Query("token")
-	if token == "" {
-		fmt.Println("token is required")
+	var req struct {
+		Token string `json:"token" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Token is required"})
 		return
 	}
 
 	var user models.User
-	if err := db.DB.Where("confirmation_token = ?", token).First(&user).Error; err != nil {
-		fmt.Println("invalid token")
+	if err := db.DB.Where("confirmation_token = ?", req.Token).First(&user).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or expired token"})
 		return
 	}
@@ -371,7 +371,6 @@ func ForgotPassword(c *gin.Context) {
 
 	var user models.User
 	if err := db.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
-		// Don't reveal if user exists
 		c.JSON(http.StatusOK, gin.H{"message": "If the email exists, a reset link has been sent."})
 		return
 	}

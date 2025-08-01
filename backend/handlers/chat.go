@@ -111,8 +111,24 @@ func GetChatHistory(c *gin.Context) {
 		return
 	}
 
+	// Get limit from query parameter, default to no limit
+	limitStr := c.Query("limit")
+	var limit int
+	if limitStr != "" {
+		if _, err := fmt.Sscanf(limitStr, "%d", &limit); err != nil || limit <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit parameter"})
+			return
+		}
+	}
+
 	var messages []models.ChatMessage
-	if err := db.DB.Where("user_id = ?", userID).Order("created_at asc").Find(&messages).Error; err != nil {
+	query := db.DB.Where("user_id = ?", userID).Order("created_at asc")
+
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+
+	if err := query.Find(&messages).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve chat history"})
 		return
 	}
@@ -143,6 +159,13 @@ func generateAIResponse(userMessage string, memories []models.Memory, people []m
 	apiKey := os.Getenv("CLAUDE_API_KEY")
 	if apiKey == "" {
 		fmt.Printf("CLAUDE_API_KEY is not set\n")
+		return "I'm sorry, but I'm not configured to respond right now. Please contact support.", nil
+	}
+
+	// Get API URL from environment, default to real Anthropic API
+	apiURL := os.Getenv("ANTHROPIC_API_URL")
+	if apiURL == "" {
+		fmt.Printf("ANTHROPIC_API_URL is not set\n")
 		return "I'm sorry, but I'm not configured to respond right now. Please contact support.", nil
 	}
 
@@ -183,7 +206,7 @@ User's Personal Information:
 		return "", err
 	}
 
-	req, err := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Printf("Error creating request: %v\n", err)
 		return "", err
@@ -230,6 +253,13 @@ func generateStreamingAIResponse(c *gin.Context, userID uuid.UUID, userMessage s
 		return fmt.Errorf("streaming not configured")
 	}
 
+	// Get API URL from environment, default to real Anthropic API
+	apiURL := os.Getenv("ANTHROPIC_API_URL")
+	if apiURL == "" {
+		fmt.Printf("ANTHROPIC_API_URL is not set for streaming\n")
+		return fmt.Errorf("streaming not configured")
+	}
+
 	// Build context for streaming
 	context := buildContext(memories, people)
 
@@ -267,7 +297,7 @@ User's Personal Information:
 		return err
 	}
 
-	req, err := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Printf("Error creating streaming request: %v\n", err)
 		return err
@@ -330,7 +360,7 @@ User's Personal Information:
 				escapedText := strings.ReplaceAll(claudeStreamResp.Delta.Text, "\n", "\\n")
 
 				fmt.Printf("Streaming response: %s\n", claudeStreamResp.Delta.Text)
-				c.Writer.Write([]byte(fmt.Sprintf("data: %s\n\n", escapedText)))
+				fmt.Fprintf(c.Writer, "data: %s\n\n", escapedText)
 				c.Writer.Flush()
 				fullResponse.WriteString(claudeStreamResp.Delta.Text)
 			}
@@ -344,7 +374,7 @@ User's Personal Information:
 					escapedText := strings.ReplaceAll(claudeStreamResp.Delta.Text, "\n", "\\n")
 
 					fmt.Printf("ELSE response: %s\n", claudeStreamResp.Delta.Text)
-					c.Writer.Write([]byte(fmt.Sprintf("data: %s\n\n", escapedText)))
+					fmt.Fprintf(c.Writer, "data: %s\n\n", escapedText)
 					c.Writer.Flush()
 					fullResponse.WriteString(claudeStreamResp.Delta.Text)
 				}
@@ -406,7 +436,7 @@ func buildContext(memories []models.Memory, people []models.Person) string {
 }
 
 // saveChatMessages saves both user and assistant messages to the database
-func saveChatMessages(userID uuid.UUID, userMessage, assistantMessage string) error {
+func saveChatMessages(userID uuid.UUID, userMessage string, assistantMessage string) error {
 	// Save user message
 	userMsg := models.ChatMessage{
 		UserID:  userID,

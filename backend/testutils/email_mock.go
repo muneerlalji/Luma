@@ -2,6 +2,8 @@ package testutils
 
 import (
 	"sync"
+
+	"github.com/muneerlalji/Luma/utils"
 )
 
 // EmailMock provides a mock implementation of email sending for tests
@@ -24,8 +26,8 @@ func NewEmailMock() *EmailMock {
 	}
 }
 
-// SendEmailMock is a mock implementation of the SendEmail function
-func (em *EmailMock) SendEmailMock(to, subject, body string) error {
+// SendEmail implements the EmailService interface
+func (em *EmailMock) SendEmail(to, subject, body string) error {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
 
@@ -35,6 +37,13 @@ func (em *EmailMock) SendEmailMock(to, subject, body string) error {
 		Body:    body,
 	})
 	return nil
+}
+
+// SetupEmailMock sets up the email mock as the global email service
+func SetupEmailMock() *EmailMock {
+	mock := NewEmailMock()
+	utils.SetEmailService(mock)
+	return mock
 }
 
 // GetSentEmails returns all sent emails

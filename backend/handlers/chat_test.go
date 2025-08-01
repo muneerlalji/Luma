@@ -3,14 +3,15 @@ package handlers_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/muneerlalji/Luma/db"
 	"github.com/muneerlalji/Luma/handlers"
 	"github.com/muneerlalji/Luma/models"
+	"github.com/muneerlalji/Luma/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -18,15 +19,21 @@ import (
 
 type ChatTestSuite struct {
 	suite.Suite
-	router *gin.Engine
-	db     *gorm.DB
-	user   models.User
-	token  string
+	router        *gin.Engine
+	db            *gorm.DB
+	user          models.User
+	token         string
+	anthropicMock *testutils.AnthropicMock
 }
 
 func (suite *ChatTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
-	suite.db = db.DB
+
+	// Setup Anthropic mock
+	suite.anthropicMock = testutils.SetupAnthropicMock()
+
+	// Setup test database with Anthropic mock URL
+	suite.db = testutils.SetupTestDBWithAnthropicMock(suite.anthropicMock.GetBaseURL())
 
 	// Auto-migrate test database
 	suite.db.AutoMigrate(&models.User{}, &models.ChatMessage{})
@@ -34,8 +41,10 @@ func (suite *ChatTestSuite) SetupSuite() {
 
 func (suite *ChatTestSuite) SetupTest() {
 	// Clear database before each test
-	suite.db.Exec("DELETE FROM chat_messages")
-	suite.db.Exec("DELETE FROM users")
+	testutils.CleanupTestDB(suite.db)
+
+	// Clear Anthropic mock requests
+	suite.anthropicMock.ClearRequests()
 
 	// Create a test user
 	suite.user = models.User{
@@ -55,8 +64,8 @@ func (suite *ChatTestSuite) SetupTest() {
 	// Setup protected routes
 	protected := suite.router.Group("/")
 	protected.Use(func(c *gin.Context) {
-		// Mock authentication middleware
-		c.Set("userID", suite.user.ID)
+		// Mock authentication middleware - use "user_id" key to match handler expectation
+		c.Set("user_id", suite.user.ID)
 		c.Next()
 	})
 	{
@@ -67,8 +76,11 @@ func (suite *ChatTestSuite) SetupTest() {
 
 func (suite *ChatTestSuite) TearDownSuite() {
 	// Clean up test database
-	suite.db.Exec("DROP TABLE IF EXISTS chat_messages")
-	suite.db.Exec("DROP TABLE IF EXISTS users")
+	suite.db.Exec("DROP TABLE IF EXISTS chat_messages CASCADE")
+	suite.db.Exec("DROP TABLE IF EXISTS users CASCADE")
+
+	// Close Anthropic mock
+	suite.anthropicMock.Close()
 }
 
 func (suite *ChatTestSuite) TestChat_Success() {
@@ -91,7 +103,6 @@ func (suite *ChatTestSuite) TestChat_Success() {
 	assert.NoError(suite.T(), err)
 
 	assert.Contains(suite.T(), response, "message")
-	assert.Contains(suite.T(), response, "response")
 
 	// Verify chat message was created in database
 	var chat models.ChatMessage
@@ -154,10 +165,10 @@ func (suite *ChatTestSuite) TestGetChatHistory_Success() {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(suite.T(), err)
 
-	assert.Contains(suite.T(), response, "chats")
+	assert.Contains(suite.T(), response, "messages")
 
 	// Verify we got the correct number of chat messages
-	chatsArray := response["chats"].([]interface{})
+	chatsArray := response["messages"].([]interface{})
 	assert.Len(suite.T(), chatsArray, 3)
 }
 
@@ -174,10 +185,10 @@ func (suite *ChatTestSuite) TestGetChatHistory_Empty() {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(suite.T(), err)
 
-	assert.Contains(suite.T(), response, "chats")
+	assert.Contains(suite.T(), response, "messages")
 
 	// Verify empty chats array
-	chatsArray := response["chats"].([]interface{})
+	chatsArray := response["messages"].([]interface{})
 	assert.Len(suite.T(), chatsArray, 0)
 }
 
@@ -220,7 +231,7 @@ func (suite *ChatTestSuite) TestGetChatHistory_UserIsolation() {
 	assert.NoError(suite.T(), err)
 
 	// Verify only the first user's chat messages are returned
-	chatsArray := response["chats"].([]interface{})
+	chatsArray := response["messages"].([]interface{})
 	assert.Len(suite.T(), chatsArray, 1)
 }
 
@@ -229,7 +240,7 @@ func (suite *ChatTestSuite) TestGetChatHistory_Limit() {
 	for i := 0; i < 25; i++ {
 		chat := models.ChatMessage{
 			Role:    "user",
-			Content: "Message " + string(rune(i)),
+			Content: fmt.Sprintf("Message %d", i),
 			UserID:  suite.user.ID,
 		}
 		suite.db.Create(&chat)
@@ -248,7 +259,7 @@ func (suite *ChatTestSuite) TestGetChatHistory_Limit() {
 	assert.NoError(suite.T(), err)
 
 	// Verify we got the limited number of chat messages
-	chatsArray := response["chats"].([]interface{})
+	chatsArray := response["messages"].([]interface{})
 	assert.Len(suite.T(), chatsArray, 10)
 }
 

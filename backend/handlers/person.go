@@ -10,11 +10,11 @@ import (
 )
 
 type CreatePersonRequest struct {
-	FirstName    string     `json:"firstName"`
-	LastName     string     `json:"lastName"`
-	Email        string     `json:"email"`
-	Phone        string     `json:"phone"`
-	Relationship string     `json:"relationship"`
+	FirstName    string     `json:"firstName" binding:"required"`
+	LastName     string     `json:"lastName" binding:"required"`
+	Email        string     `json:"email" binding:"required,email"`
+	Phone        string     `json:"phone" binding:"required"`
+	Relationship string     `json:"relationship" binding:"required"`
 	Notes        string     `json:"notes"`
 	PhotoID      *uuid.UUID `json:"photoId,omitempty"`
 }

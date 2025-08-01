@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/muneerlalji/Luma/db"
-	"github.com/muneerlalji/Luma/models"
 	"gorm.io/gorm"
 )
 
@@ -26,6 +25,13 @@ func SetupTestEnvironment() {
 	os.Setenv("SMTP_FROM", "test@example.com")
 }
 
+// SetupTestEnvironmentWithAnthropicMock sets up test environment with Anthropic mock
+func SetupTestEnvironmentWithAnthropicMock(mockURL string) {
+	SetupTestEnvironment()
+	// Override the Anthropic API URL to use the mock
+	os.Setenv("ANTHROPIC_API_URL", mockURL)
+}
+
 // SetupTestDB initializes the test database and returns the database connection
 func SetupTestDB() *gorm.DB {
 	SetupTestEnvironment()
@@ -33,14 +39,15 @@ func SetupTestDB() *gorm.DB {
 	// Initialize database
 	db.Init()
 
-	// Auto-migrate all models
-	db.DB.AutoMigrate(
-		&models.User{},
-		&models.Memory{},
-		&models.Person{},
-		&models.ChatMessage{},
-		&models.Photo{},
-	)
+	return db.DB
+}
+
+// SetupTestDBWithAnthropicMock initializes test database with Anthropic mock
+func SetupTestDBWithAnthropicMock(mockURL string) *gorm.DB {
+	SetupTestEnvironmentWithAnthropicMock(mockURL)
+
+	// Initialize database
+	db.Init()
 
 	return db.DB
 }

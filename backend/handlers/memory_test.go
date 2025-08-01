@@ -9,8 +9,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/muneerlalji/Luma/handlers"
+	"github.com/muneerlalji/Luma/middleware"
 	"github.com/muneerlalji/Luma/models"
 	"github.com/muneerlalji/Luma/testutils"
+	"github.com/muneerlalji/Luma/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -33,9 +35,7 @@ func (suite *MemoryTestSuite) SetupSuite() {
 }
 
 func (suite *MemoryTestSuite) SetupTest() {
-	// Clear database before each test
-	suite.db.Exec("DELETE FROM memories")
-	suite.db.Exec("DELETE FROM users")
+	testutils.CleanupTestDB(suite.db)
 
 	// Create a test user
 	suite.user = models.User{
@@ -46,19 +46,20 @@ func (suite *MemoryTestSuite) SetupTest() {
 	}
 	suite.db.Create(&suite.user)
 
-	// Generate a test token (in real tests, you'd use proper JWT)
-	suite.token = "test-token"
+	// Generate a proper JWT token for testing
+	token, err := utils.GenerateToken(suite.user.ID, suite.user.Email)
+	if err != nil {
+		suite.T().Fatalf("Failed to generate test token: %v", err)
+	}
+	suite.token = token
 
 	// Setup router
 	suite.router = gin.Default()
+	suite.router.Use(middleware.CORSMiddleware())
 
-	// Setup protected routes
+	// Protected routes with real auth middleware
 	protected := suite.router.Group("/")
-	protected.Use(func(c *gin.Context) {
-		// Mock authentication middleware
-		c.Set("userID", suite.user.ID)
-		c.Next()
-	})
+	protected.Use(handlers.AuthMiddleware())
 	{
 		protected.POST("/memories", handlers.CreateMemory)
 		protected.GET("/memories", handlers.GetMemories)
@@ -66,9 +67,8 @@ func (suite *MemoryTestSuite) SetupTest() {
 }
 
 func (suite *MemoryTestSuite) TearDownSuite() {
-	// Clean up test database
-	suite.db.Exec("DROP TABLE IF EXISTS memories")
-	suite.db.Exec("DROP TABLE IF EXISTS users")
+	// Clean up test database using testutils
+	testutils.CleanupTestDB(suite.db)
 }
 
 func (suite *MemoryTestSuite) TestCreateMemory_Success() {
@@ -189,9 +189,8 @@ func (suite *MemoryTestSuite) TestGetMemories_Unauthorized() {
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
 
-	// This should fail because we're not using the real auth middleware
-	// In a real test with proper middleware, this would return 401
-	assert.Equal(suite.T(), http.StatusInternalServerError, w.Code)
+	// This should now properly return 401 with real auth middleware
+	assert.Equal(suite.T(), http.StatusUnauthorized, w.Code)
 }
 
 func TestMemoryTestSuite(t *testing.T) {

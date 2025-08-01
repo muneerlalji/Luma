@@ -13,13 +13,15 @@ import (
 	"github.com/muneerlalji/Luma/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type AuthTestSuite struct {
 	suite.Suite
-	router *gin.Engine
-	db     *gorm.DB
+	router    *gin.Engine
+	db        *gorm.DB
+	emailMock *testutils.EmailMock
 }
 
 func (suite *AuthTestSuite) SetupSuite() {
@@ -27,13 +29,15 @@ func (suite *AuthTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	suite.db = testutils.SetupTestDB()
-
 	suite.db.AutoMigrate(&models.User{})
 }
 
 func (suite *AuthTestSuite) SetupTest() {
 	// Clear database before each test
 	suite.db.Exec("DELETE FROM users")
+
+	// Setup email mock
+	suite.emailMock = testutils.SetupEmailMock()
 
 	// Setup router
 	suite.router = gin.Default()
@@ -50,7 +54,12 @@ func (suite *AuthTestSuite) SetupTest() {
 }
 
 func (suite *AuthTestSuite) TearDownSuite() {
-	suite.db.Exec("DROP TABLE IF EXISTS users")
+	suite.db.Exec("DROP TABLE IF EXISTS chat_messages CASCADE")
+	suite.db.Exec("DROP TABLE IF EXISTS memory_people CASCADE")
+	suite.db.Exec("DROP TABLE IF EXISTS memories CASCADE")
+	suite.db.Exec("DROP TABLE IF EXISTS people CASCADE")
+	suite.db.Exec("DROP TABLE IF EXISTS photos CASCADE")
+	suite.db.Exec("DROP TABLE IF EXISTS users CASCADE")
 }
 
 func (suite *AuthTestSuite) TestRegister_Success() {
@@ -72,12 +81,17 @@ func (suite *AuthTestSuite) TestRegister_Success() {
 
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(suite.T(), err)
 
+	assert.NoError(suite.T(), err)
 	assert.Contains(suite.T(), response, "user")
 	assert.Contains(suite.T(), response, "message")
 
-	// Verify user was created in database
+	// Verify email was sent
+	assert.Equal(suite.T(), 1, suite.emailMock.GetEmailCount())
+	emails := suite.emailMock.FindEmailByRecipient(registerData.Email)
+	assert.Len(suite.T(), emails, 1)
+	assert.Equal(suite.T(), "Confirm your email", emails[0].Subject)
+
 	var user models.User
 	err = suite.db.Where("email = ?", registerData.Email).First(&user).Error
 	assert.NoError(suite.T(), err)
@@ -137,10 +151,11 @@ func (suite *AuthTestSuite) TestRegister_InvalidData() {
 }
 
 func (suite *AuthTestSuite) TestLogin_Success() {
-	// Create a user first
+	// Create a user first with hashed password
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	user := models.User{
 		Email:             "test@example.com",
-		Password:          "$2a$10$abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqrstuvwxyz1234567890", // bcrypt hash
+		Password:          string(hashedPassword),
 		DisplayName:       "Test User",
 		EmailConfirmed:    true,
 		ConfirmationToken: "",
@@ -160,9 +175,7 @@ func (suite *AuthTestSuite) TestLogin_Success() {
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
 
-	// Note: This test will fail because we need to properly hash the password
-	// In a real test, you'd use a proper bcrypt hash
-	assert.Equal(suite.T(), http.StatusUnauthorized, w.Code)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
 
 func (suite *AuthTestSuite) TestLogin_InvalidCredentials() {
@@ -193,7 +206,6 @@ func (suite *AuthTestSuite) TestConfirmEmail_Success() {
 	}
 	suite.db.Create(&user)
 
-	// Test confirmation
 	confirmData := map[string]string{"token": token}
 	jsonData, _ := json.Marshal(confirmData)
 	req, _ := http.NewRequest("POST", "/auth/confirm", bytes.NewBuffer(jsonData))

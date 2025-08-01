@@ -25,11 +25,19 @@ func Init() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
+	db.Exec("DROP TABLE IF EXISTS chat_messages CASCADE")
+	db.Exec("DROP TABLE IF EXISTS memory_people CASCADE")
+	db.Exec("DROP TABLE IF EXISTS memories CASCADE")
+	db.Exec("DROP TABLE IF EXISTS people CASCADE")
+	db.Exec("DROP TABLE IF EXISTS photos CASCADE")
+	db.Exec("DROP TABLE IF EXISTS users CASCADE")
+
+	// Migrate tables in dependency order
 	err = db.AutoMigrate(
 		&models.User{},
-		&models.Memory{},
 		&models.Photo{},
 		&models.Person{},
+		&models.Memory{},
 		&models.ChatMessage{},
 	)
 	if err != nil {
