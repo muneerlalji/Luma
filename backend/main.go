@@ -24,6 +24,14 @@ func main() {
 	router := gin.Default()
 	router.Use(middleware.CORSMiddleware())
 
+	// Configure trusted proxies based on environment
+	env := os.Getenv("GIN_MODE")
+	if env == "release" {
+		router.SetTrustedProxies([]string{"127.0.0.1", "::1"})
+	} else {
+		router.SetTrustedProxies([]string{"127.0.0.1", "::1", "localhost"})
+	}
+
 	// Public routes
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Luma backend running"})

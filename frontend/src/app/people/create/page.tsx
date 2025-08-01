@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
 import Page from '../../components/page/Page';
 import Button from '../../components/button/Button';
-import { createPerson, CreatePersonRequest } from '../../services/personService';
+import { createPerson, CreatePersonRequest } from '../../../services/personService';
 import AuthGuard from '../../components/auth-guard/AuthGuard';
 import axios from 'axios';
 import './page.css';

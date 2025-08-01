@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { Person, getPeople } from '../../services/personService';
+import { Person, getPeople } from '../../../services/personService';
 import './PeopleSelector.css';
 
 interface PeopleSelectorProps {

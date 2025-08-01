@@ -359,7 +359,6 @@ User's Personal Information:
 				// Escape newlines for SSE format
 				escapedText := strings.ReplaceAll(claudeStreamResp.Delta.Text, "\n", "\\n")
 
-				fmt.Printf("Streaming response: %s\n", claudeStreamResp.Delta.Text)
 				fmt.Fprintf(c.Writer, "data: %s\n\n", escapedText)
 				c.Writer.Flush()
 				fullResponse.WriteString(claudeStreamResp.Delta.Text)
@@ -373,7 +372,6 @@ User's Personal Information:
 					// Escape newlines for SSE format
 					escapedText := strings.ReplaceAll(claudeStreamResp.Delta.Text, "\n", "\\n")
 
-					fmt.Printf("ELSE response: %s\n", claudeStreamResp.Delta.Text)
 					fmt.Fprintf(c.Writer, "data: %s\n\n", escapedText)
 					c.Writer.Flush()
 					fullResponse.WriteString(claudeStreamResp.Delta.Text)

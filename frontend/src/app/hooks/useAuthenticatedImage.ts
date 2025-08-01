@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getPhotoUrl } from '../services/photoService';
+import { getPhotoUrl } from '../../services/photoService';
 
 interface UseAuthenticatedImageProps {
   photoId: string;
@@ -14,14 +14,18 @@ export const useAuthenticatedImage = ({ photoId, token, fallbackUrl }: UseAuthen
 
   useEffect(() => {
     const loadImage = async () => {
-      if (!photoId || !token) {
+      // Trim whitespace and check if values are empty
+      const trimmedPhotoId = photoId?.trim();
+      const trimmedToken = token?.trim();
+      
+      if (!trimmedPhotoId || !trimmedToken) {
         setError(true);
         setLoading(false);
         return;
       }
 
       try {
-        const presignedUrl = await getPhotoUrl(photoId, token);
+        const presignedUrl = await getPhotoUrl(trimmedPhotoId, trimmedToken);
         setImageUrl(presignedUrl);
         setError(false);
       } catch (err) {
