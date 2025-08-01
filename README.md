@@ -85,7 +85,9 @@ A gentle memory assistant application designed to help people with dementia and 
    SMTP_USERNAME=your_smtp_username
    SMTP_PASSWORD=your_smtp_password
    CLAUDE_API_KEY=your-api-key
+   ANTHROPIC_API_URL=https://api.anthropic.com/v1/messages
    ```
+
 
 4. **Run the backend**
    ```bash

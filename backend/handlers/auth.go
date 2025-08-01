@@ -335,16 +335,25 @@ func AuthMiddleware() gin.HandlerFunc {
 
 // ConfirmEmail handles email confirmation
 func ConfirmEmail(c *gin.Context) {
-	var req struct {
-		Token string `json:"token" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Token is required"})
-		return
+	var token string
+
+	// First try to get token from query parameter
+	if queryToken := c.Query("token"); queryToken != "" {
+		token = queryToken
+	} else {
+		// If not in query, try to get from request body
+		var req struct {
+			Token string `json:"token" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Token is required"})
+			return
+		}
+		token = req.Token
 	}
 
 	var user models.User
-	if err := db.DB.Where("confirmation_token = ?", req.Token).First(&user).Error; err != nil {
+	if err := db.DB.Where("confirmation_token = ?", token).First(&user).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or expired token"})
 		return
 	}

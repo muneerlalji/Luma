@@ -162,7 +162,6 @@ func generateAIResponse(userMessage string, memories []models.Memory, people []m
 		return "I'm sorry, but I'm not configured to respond right now. Please contact support.", nil
 	}
 
-	// Get API URL from environment, default to real Anthropic API
 	apiURL := os.Getenv("ANTHROPIC_API_URL")
 	if apiURL == "" {
 		fmt.Printf("ANTHROPIC_API_URL is not set\n")
@@ -253,7 +252,6 @@ func generateStreamingAIResponse(c *gin.Context, userID uuid.UUID, userMessage s
 		return fmt.Errorf("streaming not configured")
 	}
 
-	// Get API URL from environment, default to real Anthropic API
 	apiURL := os.Getenv("ANTHROPIC_API_URL")
 	if apiURL == "" {
 		fmt.Printf("ANTHROPIC_API_URL is not set for streaming\n")
@@ -330,12 +328,6 @@ User's Personal Information:
 
 	for scanner.Scan() {
 		line := scanner.Text()
-
-		// Skip empty lines
-		// if strings.TrimSpace(line) == "" {
-		// 	continue
-		// }
-
 		// Handle Server-Sent Events format
 		if strings.HasPrefix(line, "data: ") {
 			data := strings.TrimPrefix(line, "data: ")
@@ -434,7 +426,7 @@ func buildContext(memories []models.Memory, people []models.Person) string {
 }
 
 // saveChatMessages saves both user and assistant messages to the database
-func saveChatMessages(userID uuid.UUID, userMessage string, assistantMessage string) error {
+func saveChatMessages(userID uuid.UUID, userMessage, assistantMessage string) error {
 	// Save user message
 	userMsg := models.ChatMessage{
 		UserID:  userID,
